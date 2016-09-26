@@ -66,12 +66,10 @@
       </div>
     </header>
 
-    <div class="container" id="app"
-      @keyup.48="doCalcButton( 0, $event )" @keyup.49="doCalcButton( 1, $event )" @keyup.50="doCalcButton( 2, $event )"
-      @keyup.51="doCalcButton( 3, $event )" @keyup.52="doCalcButton( 4, $event )" @keyup.53="doCalcButton( 5, $event )"
-      @keyup.54="doCalcButton( 6, $event )" @keyup.55="doCalcButton( 7, $event )" @keyup.56="doCalcButton( 8, $event )"
-      @keyup.57="doCalcButton( 9, $event )" @keyup.187="doCalcButton( '+', $event )" @keyup.189="doCalcButton( '-', $event )"
-      @keyup.88="doCalcButton( '*', $event )" @keyup.191="doCalcButton( '/', $event )" @keyup.enter="doCalcButton( '=', $event )"
+    <div class="container" id="app" @keyup.48="doCalcButton( 0, $event )" @keyup.49="doCalcButton( 1, $event )" @keyup.50="doCalcButton( 2, $event )"
+      @keyup.51="doCalcButton( 3, $event )" @keyup.52="doCalcButton( 4, $event )" @keyup.53="doCalcButton( 5, $event )" @keyup.54="doCalcButton( 6, $event )"
+      @keyup.55="doCalcButton( 7, $event )" @keyup.56="doCalcButton( 8, $event )" @keyup.57="doCalcButton( 9, $event )" @keyup.187="doCalcButton( '+', $event )"
+      @keyup.189="doCalcButton( '-', $event )" @keyup.88="doCalcButton( '*', $event )" @keyup.191="doCalcButton( '/', $event )" @keyup.enter="doCalcButton( '=', $event )"
       @keyup.190="doCalcButton( '.', $event )" @keyup.67="clearEntry( $event )" @keyup.delete="backspace"
     >
       <div class="row">
@@ -80,7 +78,7 @@
           <div class="panel panel-default">
             <div class="panel-heading">
               <small class="help-block text-right calc-history">{{ calcHistoryDisplay }}</small>
-              <input class="form-control input-lg calc-display text-right" type="text" v-model="calcDisplay" @blur="focusDisplay" placeholder="0" maxlength="10" readonly>
+              <input class="form-control input-lg calc-display text-right" type="text" v-model="calcDisplay" placeholder="0" maxlength="10" readonly>
             </div>
             <div class="panel-body">
               <div class="row calc-row">
@@ -225,24 +223,16 @@
             this.calcTotal = eval( this.calcHistory.join( "" ) );
             this.currentEntry = [];
             this.currentEntry.push( this.calcTotal );
-            this.calcHistory.push( "=" );
+            this.calcHistory = [];
           },
           doOperator: function( btnOperation, lastEntry ) {
-            if ( this.lastOperation() && this.lastOperation() === "=" ) {
-              this.calcHistory = [];
-            }
             this.calcHistory.push( lastEntry );
             this.calcHistory.push( btnOperation );
             this.currentEntry = [];
           },
-          lastOperation: function() {
-            if ( this.calcHistory.length ) {
-              return this.calcHistory[this.calcHistory.length - 1];
-            } else {
-              return null;
-            }
-          },
           doCalcButton: function( btnOperation, event ) {
+            console.log( btnOperation );
+            console.log( event );
             var lastEntry = this.currentEntry.join( "" );
 
             if ( btnOperation === "." ) {
@@ -254,13 +244,7 @@
               }
             } else if ( this.operators.includes( btnOperation )) {
               // mathematical operator button or equals
-              if ( btnOperation === "+" && event.shiftKey ) {
-                this.doOperator( btnOperation, lastEntry );
-              } else if ( btnOperation === "-" && event.shiftKey ) {
-                this.plusMinus();
-              } else {
-                this.doEquals( lastEntry );
-              }
+              this.doOperator( btnOperation, lastEntry );
             } else if ( btnOperation === "=" ) {
               // equals button
               this.doEquals( lastEntry );
