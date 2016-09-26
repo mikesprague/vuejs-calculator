@@ -7,7 +7,7 @@
     <meta name="description" content="Simple Vue.js Calculator demo">
     <meta name="author" content="Mike Sprague">
     <title>Simple Vue.js Calculator demo | &lt;/&gt; by Mike Sprague</title>
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/lumen/bootstrap.min.css" rel="stylesheet" integrity="sha384-gv0oNvwnqzF6ULI9TVsSmnULNb3zasNysvWwfT/s4l8k5I+g6oFz9dye0wg3rQ2Q" crossorigin="anonymous">
     <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-T8Gy5hrqNKT+hzMclPo118YTQO6cYprQmhrYwIiQ/3axmI1hQomh7Ud2hPOy8SP1" crossorigin="anonymous">
     <link href="https://fonts.googleapis.com/css?family=Orbitron:400,500" rel="stylesheet">
     <style>
@@ -16,36 +16,43 @@
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
       }
-
       html {
         position: relative;
         min-height: 100%;
       }
-
       body {
         margin-bottom: 60px;
+        background-color: #2b3e50;
+      }
+      body, p, h1, h2, h3, h4, h5, .btn, button {
         font-family: -apple-system, BlinkMacSystemFont,
           "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell",
           "Fira Sans", "Droid Sans", "Helvetica Neue",
           sans-serif;
       }
-
+      body, p, h1, h2, h3, h4, h5 {
+        color: #b8bdc2;
+      }
       .calc-history {
         min-height: 1em;
         margin-right: 1em;
       }
-
       .calc-display {
         font-family: "Orbitron", sans-serif;
         font-size: 2.5em;
         line-height: 3em;
         margin-bottom: 0.5em;
       }
-
       .calc-row {
         margin: 20px 0;
       }
-
+      .panel {
+        border-color: #485563 !important;
+      }
+      .panel-heading {
+        background-color: #4E5D6C !important;
+        color: #b8bdc2 !importantl;
+      }
       .footer {
         position: absolute;
         bottom: 0;
@@ -69,7 +76,7 @@
     <div class="container" id="app" @keyup.48="doCalcButton( 0, $event )" @keyup.49="doCalcButton( 1, $event )" @keyup.50="doCalcButton( 2, $event )"
       @keyup.51="doCalcButton( 3, $event )" @keyup.52="doCalcButton( 4, $event )" @keyup.53="doCalcButton( 5, $event )" @keyup.54="doCalcButton( 6, $event )"
       @keyup.55="doCalcButton( 7, $event )" @keyup.56="doCalcButton( 8, $event )" @keyup.57="doCalcButton( 9, $event )" @keyup.187="doCalcButton( '+', $event )"
-      @keyup.189="doCalcButton( '-', $event )" @keyup.88="doCalcButton( '*', $event )" @keyup.191="doCalcButton( '/', $event )" @keyup.enter="doCalcButton( '=', $event )"
+      @keyup.189="doCalcButton( '-', $event )" @keyup.88="doCalcButton( '*', $event )" @keyup.191="doCalcButton( '/', $event )" @keyup.enter="doTotal"
       @keyup.190="doCalcButton( '.', $event )" @keyup.67="clearEntry( $event )" @keyup.delete="backspace"
     >
       <div class="row">
@@ -83,10 +90,10 @@
             <div class="panel-body">
               <div class="row calc-row">
                 <div class="col-xs-3">
-                  <button class="btn btn-lg btn-block btn-danger" @click="clearEntry( $event )"><small>CE</small></button>
+                  <button class="btn btn-lg btn-block btn-danger" @click="clearEntry( $event )">CE</button>
                 </div>
                 <div class="col-xs-3">
-                  <button class="btn btn-lg btn-block btn-danger" @click="clearAll"><small>C</small></button>
+                  <button class="btn btn-lg btn-block btn-danger" @click="clearAll">C</button>
                 </div>
                 <div class="col-xs-3">
                   <button class="btn btn-lg btn-block btn-primary" @click="backspace">&larr;</button>
@@ -176,6 +183,8 @@
           calcTotal: 0,
           currentEntry: [],
           calcHistory: [],
+          lastEntry: null,
+          laseOperation: null,
           operators: [ "+", "-", "*", "/" ]
         },
         ready: function() {
@@ -185,77 +194,121 @@
           focusDisplay: function() {
             document.getElementsByClassName( "calc-display" )[0].focus();
           },
+          clearBuffer: function() {
+            this.lastEntry = this.parseAsString( this.currentEntry );
+            this.currentEntry = [];
+          },
+          getBuffer: function() {
+            return this.currentEntry;
+          },
+          setBuffer: function( val ) {
+            this.getBuffer().push( val );
+          },
+          clearHistory: function() {
+            this.calcHistory = [];
+          },
+          getHistory: function() {
+            return this.calcHistory;
+          },
+          setHistory: function( val ) {
+            this.getHistory().push( val );
+          },
+          parseAsString: function( arr ) {
+            return arr.join( "" );
+          },
+          parseAsFloat: function( arr ) {
+            return parseFloat( arr.join( "" ) );
+          },
           plusMinus: function() {
-            if ( this.currentEntry.length ) {
-              var newEntry = parseFloat( this.currentEntry.join( "" ) ) * -1;
-              this.currentEntry = [];
-              this.currentEntry.push( newEntry );
-            } else if ( this.calcTotal !== 0 ) {
-              this.calcTotal = this.calcTotal * -1;
-              this.currentEntry.push( this.calcTotal );
+            if ( this.currentEntry.length && this.currentEntry !== 0 ) {
+              var buffer = this.parseAsFloat( this.getBuffer() );
+              this.clearBuffer();
+              this.setBuffer( buffer * -1 );
             }
             this.focusDisplay();
           },
           backspace: function() {
-            if ( this.currentEntry.length ) {
-              this.currentEntry.pop();
+            if ( this.getBuffer().length > 1 ) {
+              this.getBuffer().pop();
+            } else if ( this.getBuffer().length === 1 ) {
+              this.clearBuffer();
+              this.setBuffer( '0' );
             }
             this.focusDisplay();
           },
           clearEntry: function( event ) {
             if ( event.shiftKey ) {
               this.clearAll();
-            } else if ( this.currentEntry.length ) {
-              this.currentEntry = [];
+            } else if ( this.getBuffer().length ) {
+              this.clearBuffer();
               this.focusDisplay();
-            } else {
-              this.clearAll();
             }
           },
           clearAll: function() {
             this.calcTotal = 0;
             this.calcHistory = [];
             this.currentEntry = [];
+            this.lastEntry = null;
+            this.laseOperation = null;
             this.focusDisplay();
           },
-          doEquals: function( lastEntry ) {
-            this.calcHistory.push( lastEntry );
-            this.calcTotal = eval( this.calcHistory.join( "" ) );
-            this.currentEntry = [];
-            this.currentEntry.push( this.calcTotal );
-            this.calcHistory = [];
+          doTotal: function() {
+            if ( this.getHistory()[this.getHistory().length - 1] !== "=" ) {
+              this.clearBuffer();
+              this.setHistory( this.lastEntry );
+              this.calcTotal = eval( this.parseAsString( this.getHistory() ));
+              this.setHistory( "=" );
+              if ( this.calcTotal == "Infinity" ) {
+                this.clearAll();
+                this.calcTotal = "Err"
+                this.setBuffer( this.calcTotal );
+              } else {
+                this.setBuffer( this.calcTotal );
+              }
+            }
           },
-          doOperator: function( btnOperation, lastEntry ) {
-            this.calcHistory.push( lastEntry );
-            this.calcHistory.push( btnOperation );
-            this.currentEntry = [];
+          doOperator: function( btnOperation ) {
+            this.clearBuffer();
+            if ( this.lastEntry.trim().length ) {
+              this.setHistory( this.lastEntry );
+            }
+            this.setHistory( btnOperation );
           },
           doCalcButton: function( btnOperation, event ) {
-            console.log( btnOperation );
-            console.log( event );
-            var lastEntry = this.currentEntry.join( "" );
-
+            if ( this.getHistory().length && this.getHistory()[this.getHistory().length - 1] === "=" ) {
+              this.clearHistory();
+              this.clearBuffer();
+              if ( this.lastEntry.trim().length ) {
+                this.setHistory( this.lastEntry );
+              }
+            }
             if ( btnOperation === "." ) {
               // decimal button
-              if ( lastEntry.length && lastEntry.indexOf( "." ) === -1 ) {
+              if ( this.lastEntry === null) {
+                this.currentEntry.push( "0." );
+              } else if ( this.lastEntry.length && this.lastEntry.indexOf( "." ) === -1 ) {
                 this.currentEntry.push( "." );
               } else if ( !lastEntry.length ) {
                 this.currentEntry.push( "0." );
               }
             } else if ( this.operators.includes( btnOperation )) {
               // mathematical operator button or equals
-              this.doOperator( btnOperation, lastEntry );
-            } else if ( btnOperation === "=" ) {
-              // equals button
-              this.doEquals( lastEntry );
+              if ( btnOperation === "+" && event.shiftKey ) {
+                this.doOperator( "+" );
+              } else if ( btnOperation === "+" ) {
+                if ( this.getHistory()[this.getHistory().length - 1] !== "=" ) {
+                  this.doTotal();
+                }
+              } else {
+                this.doOperator( btnOperation );
+              }
             } else {
               // numeric button or multiply (shift + 8)
               if ( btnOperation === 8 && event.shiftKey ) {
-                if ( lastEntry.length && lastEntry !== 0 ) {
-                  this.doOperator( "*", lastEntry );
-                }
+                this.doOperator( "*" );
               } else {
-                this.currentEntry.push( parseInt( btnOperation ));
+                this.setBuffer( btnOperation );
+                this.lastEntry = btnOperation;
               }
             }
             this.focusDisplay();
@@ -270,10 +323,8 @@
             return returnValue;
           },
           calcDisplay: function() {
-            if ( this.currentEntry.length ) {
-              return parseFloat( this.currentEntry.join( "" ));
-            } else {
-              return this.calcTotal;
+            if ( this.getBuffer().length ) {
+              return this.parseAsString( this.getBuffer() );
             }
           }
         }
